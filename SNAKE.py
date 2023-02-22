@@ -58,9 +58,6 @@ class Place:
 
 
 class Game(Snake, Place):
-    def __init__(self):
-        self.__foodAxis = [5, 5]
-
     def __setRandomAxis(self):
         axis = []
         axis.append(random.randint(0, self.getWidth-1),
@@ -76,7 +73,6 @@ class Game(Snake, Place):
 
 
 if __name__ == '__main__':
-    snake = Snake(1)
-    p = Place()
+    pass
 
 
