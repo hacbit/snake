@@ -2,7 +2,8 @@ from time import sleep
 from random import randint
 from os import system
 from numpy import sum
-import keyboard
+from pynput.keyboard import Key, Listener
+from keyboard import wait
 
 
 class Snake:
@@ -28,10 +29,10 @@ class Snake:
             self.__placeData.append('  ' * self.__placeWidth)
 
     def LoadPlace(self):
-        print('--'*self.__placeWidth + '---')
+        print(' ' + '--'*self.__placeWidth + '-')
         for i in self.__placeData:
             print('| ' + i + '|')
-        print('--'*self.__placeWidth + '---', end='')
+        print(' ' + '--'*self.__placeWidth + '-', end='')
 
     def lengthGrow(self):
         self.__length += 1
@@ -44,14 +45,18 @@ class Snake:
         print('----------GAMEOVER----------')
         print('YOUR SCORE IS ', score, ' pt')
 
-    def set_food0rObstacle(self, sth):
+    def draw(self, sth, axis):
         dic = {'food':'$',
-                'obstacle':'#'
+                'obstacle':'#',
+                'head':'@',
+                'trunk':'*'
             }
-        self.__foodAxis = [randint(0, self.getWidth()-1),
-                randint(0, self.getHeight()-1)]
         if not self.isInBody() and sth in dic:
-            self.__placeData[self.__foodAxis[0]][self.__foodAxis[1]] = sth[0] + ' '
+            self.__placeData[axis[0]][axis[1]] = sth[0] + ' '
+
+    def getRandomAxis(self):
+        return [randint(0, self.getWidth()-1),
+                randint(0, self.getHeight()-1)]
 
     def addAxis(self, axis, direction):
         return sum([axis, direction], axis=0).tolist()
@@ -67,7 +72,8 @@ class Snake:
         return sth in self.__bodyAxis
 
     def isEat(self):
-        return self.__bodyAxis[0] == self.__foodAxis
+        return self.__placeData[self.__bodyAxis[0][0]]\
+                                [self.__bodyAxis[0][1]] == '$'
 
 # -*-*-*-*-*-*-api-*-*-*-*-*-
     def getLength(self):
@@ -89,32 +95,36 @@ class Snake:
 def CLEAR():
     system('cls')
 
+keylist = ['left', 'right', 'up', 'down', 
+           'a', 'd', 'w', 's']
+
 def key2direct(k):
     if k.event_type == 'down':
-        if k.name == 'left' or k.name == 'a':
-            return 'l'
-        elif k.name == 'right' or k.name == 'd':
-            return 'r'
-        elif k.name == 'up' or k.name == 'w':
-            return 'u'
-        elif k.name == 'down' or k.name == 's':
-            return 'd'
+        if k.name in keylist:
+            return keylist[keylist.index(k.name) % 4][0]
         else:
             pass
     else:
         pass
 
+def put1by1(str, t, end='\n'):
+    for i in range(len(str)):
+        print(str[:i], end='\r')
+        sleep(t)
+    print(str, end=end)
 
 
 if __name__ == '__main__':
-    print("-----WELCOME TO SNAKE-----")
-    print("using 'W A S D' or '↑ ↓ ← →' to contorl")
-    for i in range(60):
-        print('press ENTER to continue', '.'*(i%6 + 1), '     \r', end='')
-        sleep(0.2)
-        
-    
-    
-    game = Snake()
+    CLEAR()
+    put1by1("-----WELCOME TO SNAKE-----", 0.02)
+    put1by1("using 'W A S D' or '↑ ↓ ← →' to contorl", 0.02)
+    put1by1('press enter to continue', 0.02, end='\r')
+    for i in range(6):
+        print('press enter to continue', '.'*(i+1), end='\r')
+        sleep(0.15)
+    wait('enter')
 
-    
+    game = Snake()
+    game.initPlace()
+    game.LoadPlace()
+
