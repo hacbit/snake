@@ -1,17 +1,15 @@
-from time import sleep
-from random import randint
 from os import system
+from time import sleep
 from numpy import sum
-from pynput.keyboard import Key, Listener
+from random import randint
 from keyboard import wait
+from pynput.keyboard import Key, Listener, GlobalHotKeys
 
 
 class Snake:
-    def __init__(self, __placeWidth = 20, __placeHeight = 20):
-        self.__length = 2
-        self.__velocity = 10
+    def __init__(self, __velocity = 3, __placeWidth = 20, __placeHeight = 20):
+        self.__velocity = __velocity
         self.__placeData = []
-        self.__foodAxis = []
         self.__snakeDirection = 'r'
         self.__bodyAxis = [[1, 1], [1, 2]]
         self.__placeWidth = __placeWidth
@@ -33,12 +31,15 @@ class Snake:
         for i in self.__placeData:
             print('| ' + i + '|')
         print(' ' + '--'*self.__placeWidth + '-', end='')
-
-    def lengthGrow(self):
-        self.__length += 1
     
     def crawl(self):
-        pass
+        nextAxis = self.addAxis(self.__bodyAxis[0], 
+                                self.__snakeDirection)
+        self.__bodyAxis = nextAxis + \
+            self.__bodyAxis[:self.getLength()+self.isEat()-1]
+
+    def setGameLevel(self):
+        arr = [1, 2, 3, ]
 
     def putScore(self):
         score = self.getLength()-2
@@ -64,21 +65,22 @@ class Snake:
     def nextStep(self):
         if self.__snakeDirection in self.__snakeDirectionDict:
             return self.__snakeDirectionDict[self.__snakeDirection]
-
-    def isCollide(self):
-        return self.nextStep() in self.__bodyAxis[1:-1]
-
+    
     def isInBody(self, sth):
         return sth in self.__bodyAxis
+    
+    def isCollide(self):
+        return self.nextStep() in self.__bodyAxis[1:-1]
 
     def isEat(self):
         return self.__placeData[self.__bodyAxis[0][0]]\
                                 [self.__bodyAxis[0][1]] == '$'
+    
 
 # -*-*-*-*-*-*-api-*-*-*-*-*-
     def getLength(self):
-        return self.__length
-
+        return len(self.__bodyAxis)
+    
     def getHeadAxis(self):
         return self.__bodyAxis[0]
 
@@ -95,17 +97,29 @@ class Snake:
 def CLEAR():
     system('cls')
 
-keylist = ['left', 'right', 'up', 'down', 
+keylist = [Key.left, Key.right, Key.up, Key.down, 
            'a', 'd', 'w', 's']
 
-def key2direct(k):
-    if k.event_type == 'down':
-        if k.name in keylist:
-            return keylist[keylist.index(k.name) % 4][0]
-        else:
+def on_press(key):
+    try:
+        if key in keylist or key.char in keylist:
             pass
-    else:
-        pass
+    except:
+        return
+    
+def on_release(key):
+    if key == Key.esc:
+        return False
+
+isStop = False
+level = 3
+
+def actionAfterHotKey(key):
+    ls = ['1st', '2nd', '3rd']
+    print('YOU CHOOSE', ls[key-1], 'LEVEL')
+    global isStop, level
+    isStop = True
+    level = key
 
 def put1by1(str, t, end='\n'):
     for i in range(len(str)):
@@ -115,16 +129,30 @@ def put1by1(str, t, end='\n'):
 
 
 if __name__ == '__main__':
-    CLEAR()
-    put1by1("-----WELCOME TO SNAKE-----", 0.02)
-    put1by1("using 'W A S D' or '↑ ↓ ← →' to contorl", 0.02)
-    put1by1('press enter to continue', 0.02, end='\r')
-    for i in range(6):
-        print('press enter to continue', '.'*(i+1), end='\r')
-        sleep(0.15)
-    wait('enter')
+    with Listener(on_press=on_press, 
+                  on_release=on_release,
+                  suppress=True) as listener:
 
-    game = Snake()
-    game.initPlace()
-    game.LoadPlace()
+        CLEAR()
+        put1by1("-----WELCOME TO SNAKE-----", 0.02)
+        put1by1("using 'W A S D' or '↑ ↓ ← →' to contorl", 0.02)
+        put1by1('press enter to continue', 0.02, end='\r')
+        for i in range(6):
+            print('press ENTER to continue', '.'*(i+1), end='\r')
+            sleep(0.15)
+        wait('enter')
 
+        print('Now choose your game level (1.EASY  2.MEDIUM  3.HARD)')
+        with GlobalHotKeys({
+            '1': lambda:actionAfterHotKey(1),
+            '2': lambda:actionAfterHotKey(2),
+            '3': lambda:actionAfterHotKey(3)}) as h:
+            while not isStop:
+                pass
+            h.stop()
+
+        game = Snake(level)
+        game.initPlace()
+        game.LoadPlace()
+
+        listener.join()
