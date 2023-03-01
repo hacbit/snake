@@ -4,11 +4,9 @@ Copyright (C) 2023- hacbit
 '''
 
 from os import system, name
-from sys import stdout
-from time import sleep
 from numpy import sum
 from random import randint
-from pynput.keyboard import Key, Listener, GlobalHotKeys
+from pynput.keyboard import Key, Listener
 import curses
 
 class Snake:
@@ -101,66 +99,60 @@ class Snake:
     
 # ===== class Snake end =====
 
+
 keylist = ['l', 'r', 'u', 'd', 
            'a', 'd', 'w', 's',
            Key.left, Key.right, Key.up, Key.down]
 direction = curses.KEY_RIGHT
-isStop = False
-level = 3
 
 def CLEAR():
     system('cls' if name == 'nt' else 'clear')
 
 def on_press(key):
     global direction
-    if key == 'a' and not direction == curses.RIGHT:
-        direction = curses.LEFT
-    elif key == 'd' and not direction == curses.LEFT:
-        direction = curses.RIGHT
-    elif key == 'w' and not direction == curses.DOWN:
-        direction = curses.UP
-    elif key == 's' and not direction == curses.UP:
-        direction = curses.DOWN
-
-def actionAfterHotKey(key):
-    ls = ['1st', '2nd', '3rd']
-    print('YOU CHOOSE', ls[key-1], 'LEVEL')
-    global isStop, level
-    isStop = True
-    level = key
+    if key == 'a' and not direction == curses.KEY_RIGHT:
+        direction = curses.KEY_LEFT
+    elif key == 'd' and not direction == curses.KEY_LEFT:
+        direction = curses.KEY_RIGHT
+    elif key == 'w' and not direction == curses.KEY_DOWN:
+        direction = curses.KEY_UP
+    elif key == 's' and not direction == curses.KEY_UP:
+        direction = curses.KEY_DOWN
 
 
 if __name__ == '__main__':
     screen = curses.initscr()
-    curses.curs_set(0)  # hide the cursor
-    listener = Listener(on_press=on_press)
-    listener.start()
+    curses.curs_set(0)      # hide the cursor
+    curses.noecho()         # turn off echo
+    curses.filter()         # ignore all character input
+    screen.keypad(True)
     screen.addstr(0, 0, "-----WELCOME TO SNAKE-----")
     screen.addstr(1, 0, "using 'W A S D' or '↑ ↓ ← →' to contorl")
     screen.addstr(2, 0, 'press enter to continue ......')
     screen.refresh()
-    s = screen.getstr(3, 0)     # wait before press enter
-    screen.addstr(10, 0, "you input "+str(s))
+    screen.getstr(3, 0)     # wait before press enter
     screen.addstr(4, 0, 'Now choose your game level (1.EASY  2.MEDIUM  3.HARD)')
     screen.refresh()
-    '''
-    with GlobalHotKeys({
-        '1': lambda:actionAfterHotKey(1),
-        '2': lambda:actionAfterHotKey(2),
-        '3': lambda:actionAfterHotKey(3)}) as h:
-        while not isStop:
-            pass
-        h.stop()
-
-    game = Snake(level)
-
-    sleep(1)
-    game.putScore()'''
-    listener.stop()
+    while True:
+        k = screen.getch()
+        if k == ord('1'):
+            screen.addstr(5, 0, 'YOU CHOOSE 1st LEVEL')
+            break
+        elif k == ord('2'):
+            screen.addstr(5, 0, 'YOU CHOOSE 2nd LEVEL')
+            break
+        elif k == ord('3'):
+            screen.addstr(5, 0, 'YOU CHOOSE 3rd LEVEL')
+            break
+    screen.refresh()
+    curses.napms(2000)
+    
+    # DO SOMETHING
     
     screen.clear()
     screen.addstr(0, 0, '-----GAMEOVER-----')
     screen.addstr(1, 0, 'press any key to exit program')
     screen.refresh()
+    screen.keypad(False)
     screen.getch()
     curses.endwin()
