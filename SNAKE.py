@@ -100,9 +100,6 @@ class Snake:
 # ===== class Snake end =====
 
 
-keylist = ['l', 'r', 'u', 'd', 
-           'a', 'd', 'w', 's',
-           Key.left, Key.right, Key.up, Key.down]
 direction = curses.KEY_RIGHT
 
 def CLEAR():
@@ -121,38 +118,63 @@ def on_press(key):
 
 
 if __name__ == '__main__':
-    screen = curses.initscr()
+    stdscr = curses.initscr()
     curses.curs_set(0)      # hide the cursor
     curses.noecho()         # turn off echo
     curses.filter()         # ignore all character input
-    screen.keypad(True)
-    screen.addstr(0, 0, "-----WELCOME TO SNAKE-----")
-    screen.addstr(1, 0, "using 'W A S D' or '↑ ↓ ← →' to contorl")
-    screen.addstr(2, 0, 'press enter to continue ......')
-    screen.refresh()
-    screen.getstr(3, 0)     # wait before press enter
-    screen.addstr(4, 0, 'Now choose your game level (1.EASY  2.MEDIUM  3.HARD)')
-    screen.refresh()
+    stdscr.keypad(True)
+    stdscr.addstr(0, 0, "--------- WELCOME TO SNAKE ---------")
+    stdscr.addstr(1, 0, "using 'W A S D' or '↑ ↓ ← →' to contorl")
+    stdscr.addstr(2, 0, 'press enter to continue ......')
+    stdscr.refresh()
+    stdscr.getstr(3, 0)     # wait before press enter
+    stdscr.addstr(4, 0, 'Now choose your game level (1.EASY  2.MEDIUM  3.HARD)')
+    stdscr.refresh()
     while True:
-        k = screen.getch()
+        k = stdscr.getch()
         if k == ord('1'):
-            screen.addstr(5, 0, 'YOU CHOOSE 1st LEVEL')
+            stdscr.addstr(5, 0, 'YOU CHOOSE 1st LEVEL')
+            level = 1
             break
         elif k == ord('2'):
-            screen.addstr(5, 0, 'YOU CHOOSE 2nd LEVEL')
+            stdscr.addstr(5, 0, 'YOU CHOOSE 2nd LEVEL')
+            level = 2
             break
         elif k == ord('3'):
-            screen.addstr(5, 0, 'YOU CHOOSE 3rd LEVEL')
+            stdscr.addstr(5, 0, 'YOU CHOOSE 3rd LEVEL')
+            level = 3
             break
-    screen.refresh()
+    stdscr.refresh()
     curses.napms(2000)
+    stdscr.clear()
+    stdscr.addstr(0, 0, '--------- LEVEL ' + str(level) + '---------')
+    stdscr.addstr(1, 0, "using 'W A S D' or '↑ ↓ ← →' to contorl")
+    stdscr.refresh()
+    '''
+    set the interface to fit the window size
+    it better to leave a size of 20 by 40
+    '''
+    height, width = stdscr.getmaxyx()
+    if height*2 <= width:
+        win = curses.newwin(height-2, (height-2)*2, 2, 0)
+    else:
+        win = curses.newwin(width//2-1, (width//2-1)*2, 2, 0)
+    win.border()
+    win.refresh()
+
+    listener = Listener(on_press=on_press)
+    listener.start()
+    g = Snake(level)
     
-    # DO SOMETHING
-    
-    screen.clear()
-    screen.addstr(0, 0, '-----GAMEOVER-----')
-    screen.addstr(1, 0, 'press any key to exit program')
-    screen.refresh()
-    screen.keypad(False)
-    screen.getch()
+    win.addch(8, 8, '$')
+    win.refresh()
+    curses.napms(3000)
+    listener.stop()
+
+    stdscr.clear()
+    stdscr.addstr(0, 0, '--------- GAMEOVER ---------')
+    stdscr.addstr(1, 0, 'press any key to exit program')
+    stdscr.refresh()
+    stdscr.keypad(False)
+    stdscr.getch()
     curses.endwin()
