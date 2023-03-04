@@ -3,129 +3,60 @@ __doc__ = '''
 Copyright (C) 2023- hacbit
 '''
 
-from os import system, name
+import curses
 from numpy import sum
 from random import randint
-from pynput.keyboard import Key, Listener
-import curses
+
 
 class Snake:
-    def __init__(self, __level = 3, __placeWidth = 20, __placeHeight = 20):
-        self.__level = __level
-        self.__time = self.__setLevel()
-        self.__snakeDirection = 'r'
-        self.__bodyAxis = [[1, 1], [1, 2]]
-        self.__placeWidth = __placeWidth
-        self.__placeHeight = __placeHeight
-        self.__placeData = self.__initPlace()
+    def __init__(self):
+        self.__snakeAxis = [[3, 6], [3, 4]]
         self.__snakeDirectionDict = {
-                'l':[-1,0],
-                'r':[1,0],
-                'u':[0,1],
-                'd':[0,-1]
+                curses.KEY_UP:[-1,0],
+                curses.KEY_DOWN:[1,0],
+                curses.KEY_RIGHT:[0,2],
+                curses.KEY_LEFT:[0,-2]
             }
         
-        
-    def __setLevel(self):
-        return [0.4, 0.2, 0.1][self.__level-1]
+    def crawl(self, direction, fln, fclm):
+        nextAxis = [self.addAxis(self.__snakeAxis[0], 
+                                self.__snakeDirectionDict[direction])]
+        self.__snakeAxis = nextAxis + self.__snakeAxis
+        if not self.isEat(fln, fclm):
+            self.__snakeAxis.pop()
 
-    def __initPlace(self):
-        arr = []
-        for _ in range(self.__placeHeight + 2):
-            arr.append('  ' * self.__placeWidth)
-        return arr
-
-    def LoadPlace(self):
-        print(' ' + '--'*self.__placeWidth + '-')
-        for i in self.__placeData:
-            print('| ' + i + '|')
-        print(' ' + '--'*self.__placeWidth + '-')
-    
-    def crawl(self):
-        nextAxis = self.__addAxis(self.__bodyAxis[0], 
-                                self.__snakeDirection)
-        self.__bodyAxis = nextAxis + \
-            self.__bodyAxis[:self.getLength()+self.__isEat()-1]
-
-    def putScore(self):
-        score = self.getLength()-2
-        print('----------GAMEOVER----------')
-        print('YOUR SCORE IS ', score, ' pt')
-
-    def __draw(self, sth, axis):
-        dic = {'food':'$',
-                'obstacle':'#',
-                'head':'@',
-                'trunk':'*'
-            }
-        if not self.__isInBody() and sth in dic:
-            self.__placeData[axis[0]][axis[1]] = sth[0] + ' '
-
-    def __getRandomAxis(self):
-        return [randint(0, self.getWidth()-1),
-                randint(0, self.getHeight()-1)]
-
-    def __addAxis(self, axis, direction):
+    def addAxis(self, axis, direction):
         return sum([axis, direction], axis=0).tolist()
-
-    def __nextStep(self):
-        if self.__snakeDirection in self.__snakeDirectionDict:
-            return self.__snakeDirectionDict[self.__snakeDirection]
     
-    def __isInBody(self, sth):
-        return sth in self.__bodyAxis
+    def isCollide(self, upb, downb, leftb, rightb):
+        return self.__snakeAxis[0] in self.__snakeAxis[1:] or \
+                self.__snakeAxis[0][0] in [upb, downb] or \
+                self.__snakeAxis[0][1] in [leftb, rightb]
     
-    def __isCollide(self):
-        return self.__nextStep() in self.__bodyAxis[1:-1]
+    def isEat(self, fln, fclm):
+        return self.__snakeAxis[0] == [fln, fclm]
 
-    def __isEat(self):
-        return self.__placeData[self.__bodyAxis[0][0]]\
-                                [self.__bodyAxis[0][1]] == '$'
-    
-    def getLength(self):
-        return len(self.__bodyAxis)
-    
-    def getHeadAxis(self):
-        return self.__bodyAxis[0]
-
-    def getWidth(self):
-        return self.__placeWidth
-
-    def getHeight(self):
-        return self.__placeHeight
-
-    def Direction_change(self, key):
-        return self.__snakeDirectionDict[key]
+    def snakeAxis(self):
+        return self.__snakeAxis
     
 # ===== class Snake end =====
 
 
-direction = curses.KEY_RIGHT
+def getRandomYX(al, ar, bl, br):
+    return [randint(al, ar),
+            randint(bl, br)*2]
 
-def CLEAR():
-    system('cls' if name == 'nt' else 'clear')
-
-def on_press(key):
-    global direction
-    if key == 'a' and not direction == curses.KEY_RIGHT:
-        direction = curses.KEY_LEFT
-    elif key == 'd' and not direction == curses.KEY_LEFT:
-        direction = curses.KEY_RIGHT
-    elif key == 'w' and not direction == curses.KEY_DOWN:
-        direction = curses.KEY_UP
-    elif key == 's' and not direction == curses.KEY_UP:
-        direction = curses.KEY_DOWN
-
-
-if __name__ == '__main__':
-    stdscr = curses.initscr()
+def main(stdscr):
+    # stdscr = curses.initscr()
     curses.curs_set(0)      # hide the cursor
-    curses.noecho()         # turn off echo
+    curses.noecho()
+    curses.cbreak()
     curses.filter()         # ignore all character input
-    stdscr.keypad(True)
+    stdscr.nodelay(1)
+    stdscr.keypad(1)
     stdscr.addstr(0, 0, "--------- WELCOME TO SNAKE ---------")
     stdscr.addstr(1, 0, "using 'W A S D' or '↑ ↓ ← →' to contorl")
-    stdscr.addstr(2, 0, 'press enter to continue ......')
+    stdscr.addstr(2, 0, 'press ENTER to continue ......')
     stdscr.refresh()
     stdscr.getstr(3, 0)     # wait before press enter
     stdscr.addstr(4, 0, 'Now choose your game level (1.EASY  2.MEDIUM  3.HARD)')
@@ -145,36 +76,78 @@ if __name__ == '__main__':
             level = 3
             break
     stdscr.refresh()
-    curses.napms(2000)
+    curses.napms(1000)
     stdscr.clear()
     stdscr.addstr(0, 0, '--------- LEVEL ' + str(level) + '---------')
     stdscr.addstr(1, 0, "using 'W A S D' or '↑ ↓ ← →' to contorl")
     stdscr.refresh()
-    '''
-    set the interface to fit the window size
-    it better to leave a size of 20 by 40
-    '''
-    height, width = stdscr.getmaxyx()
-    if height*2 <= width:
-        win = curses.newwin(height-2, (height-2)*2, 2, 0)
-    else:
-        win = curses.newwin(width//2-1, (width//2-1)*2, 2, 0)
-    win.border()
-    win.refresh()
-
-    listener = Listener(on_press=on_press)
-    listener.start()
+    win = curses.newwin(22, 43, 2, 0)
     g = Snake(level)
-    
-    win.addch(8, 8, '$')
-    win.refresh()
-    curses.napms(3000)
-    listener.stop()
+    if level == 1:
+        nap = 200
+    elif level == 2:
+        nap = 120
+    elif level == 3:
+        nap = 70
+    direction = curses.KEY_RIGHT
+    isExistfood = False
+    score = 0
 
+    while True:
+        win.clear()
+        win.border()
+
+        key = stdscr.getch()
+        if (key == ord('a') or key == curses.KEY_LEFT) and not direction == curses.KEY_RIGHT:
+            direction = curses.KEY_LEFT
+        elif (key == ord('d') or key == curses.KEY_RIGHT) and not direction == curses.KEY_LEFT:
+            direction = curses.KEY_RIGHT
+        elif (key == ord('w') or key == curses.KEY_UP) and not direction == curses.KEY_DOWN:
+            direction = curses.KEY_UP
+        elif (key == ord('s') or key == curses.KEY_DOWN) and not direction == curses.KEY_UP:
+            direction = curses.KEY_DOWN
+
+        snake = g.snakeAxis()
+        win.addch(snake[0][0], snake[0][1], '@')
+        for node in snake[1:]:
+            win.addch(node[0], node[1], '*')
+
+        if not isExistfood:
+            isExistfood = True
+            foodline, foodcolume = getRandomYX(1, 20, 1, 20)
+            if [foodline, foodcolume] in snake:
+                continue
+
+        win.addch(foodline, foodcolume, '$')
+        win.refresh()
+
+        if g.isCollide(0, 21, 0, 42):
+            break
+        
+        g.crawl(direction=direction, fln=foodline, fclm=foodcolume)
+        if g.isEat(fln=foodline, fclm=foodcolume):
+            isExistfood = False
+            score += 1
+
+        curses.napms(nap)
+        
+    curses.napms(1000)
+    curses.nocbreak()
     stdscr.clear()
-    stdscr.addstr(0, 0, '--------- GAMEOVER ---------')
-    stdscr.addstr(1, 0, 'press any key to exit program')
+    stdscr.nodelay(0)
+    stdscr.keypad(0)
+    stdscr.addstr(0, 0, '  GGGGGG       A      MM      MM  EEEEEEEEE   OOOOOO   VV       VV EEEEEEEEE RRRRRRRR')
+    stdscr.addstr(1, 0, 'GGG    GG     AAA     MMM    MMM  EE         OO    OO  VV       VV EE        RR     RR')
+    stdscr.addstr(2, 0, 'GG           A   A    MM M  M MM  EE        OO      OO VV       VV EE        RR     RR')
+    stdscr.addstr(3, 0, 'GG   GGGGG  AA   AA   MM  MM  MM  EEEEEEEEE OO      OO  VV     VV  EEEEEEEEE RRRRRRRR')
+    stdscr.addstr(4, 0, 'GG     GGG AAAAAAAAA MM   MM   MM EE        OO      OO   VV   VV   EE        RR    RR')
+    stdscr.addstr(5, 0, ' GGG  GG G AA     AA MM        MM EE         OO    OO     VV VV    EE        RR     RR')
+    stdscr.addstr(6, 0, '  GGGGG  G AA     AA MM        MM EEEEEEEEE   OOOOOO       VVV     EEEEEEEEE RR     RR')
+
+    stdscr.addstr(8, 0, 'YOUR SCORE IS ' + str(score))
+    stdscr.addstr(10, 0, 'press ENTER to exit program ......')
     stdscr.refresh()
-    stdscr.keypad(False)
     stdscr.getch()
-    curses.endwin()
+
+if __name__ == '__main__':
+    curses.wrapper(main)
