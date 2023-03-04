@@ -82,7 +82,7 @@ def main(stdscr):
     stdscr.addstr(1, 0, "using 'W A S D' or '↑ ↓ ← →' to contorl")
     stdscr.refresh()
     win = curses.newwin(22, 43, 2, 0)
-    g = Snake(level)
+    g = Snake()
     if level == 1:
         nap = 200
     elif level == 2:
